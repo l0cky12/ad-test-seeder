@@ -452,7 +452,7 @@ for ($i = 1; $i -le $UserCount; $i++) {
     $sam   = ($first[0] + $last).ToLower()
     $suffix = 1
     while ($usedNames.ContainsKey($sam)) {
-        $sam = "$($first[0].ToLower())$($last.ToLower())$suffix"
+        $sam = "$($first.Substring(0,1).ToLower())$($last.ToLower())$suffix"
         $suffix++
     }
     $usedNames[$sam] = $true
@@ -551,7 +551,7 @@ for ($i = 1; $i -le $contactCount; $i++) {
     $first = $firstNames | Get-Random
     $last  = $lastNames  | Get-Random
     $domain = $contactSources | Get-Random
-    $email  = "$($first[0].ToLower())$($last.ToLower())@$domain"
+    $email  = "$($first.Substring(0,1).ToLower())$($last.ToLower())@$domain"
     $cname  = "$first $last (External)"
 
     # Ensure unique
