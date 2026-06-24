@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Populates a test Active Directory domain with a realistic fake company structure.
 
@@ -29,7 +29,7 @@
     Number of security groups (default: 100).
 
 .PARAMETER OUCount
-    Target OU count — controls granularity of department/office sub-OUs (default: 100).
+    Target OU count - controls granularity of department/office sub-OUs (default: 100).
 
 .PARAMETER ServiceAccountCount
     Number of service accounts (default: 5).
@@ -53,7 +53,7 @@
 
 .EXAMPLE
     .\Populate-TestAD.ps1 -UserCount 5000 -ComputerCount 3000
-    Larger scale — 5K users, 3K computers.
+    Larger scale - 5K users, 3K computers.
 
 .NOTES
     Requires: ActiveDirectory PowerShell module
@@ -63,15 +63,15 @@
     Execution Policy:
     If you get a digitally-signed error, run one of these before the script:
 
-    Option 1 — Unblock + run with bypass (one-time):
+    Option 1 - Unblock + run with bypass (one-time):
         Unblock-File .\Populate-TestAD.ps1
         powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1
 
-    Option 2 — Set policy for current session only:
+    Option 2 - Set policy for current session only:
         Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
         .\Populate-TestAD.ps1
 
-    Option 3 — Run directly with bypass:
+    Option 3 - Run directly with bypass:
         powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1 [-CleanFirst] [-UserCount 500] ...
 #>
 
@@ -89,7 +89,7 @@ param(
     [switch]$CleanFirst
 )
 
-# ── Bootstrap ────────────────────────────────────────────────────────────────
+# -- Bootstrap ----------------------------------------------------------------
 
 # Auto-unblock if downloaded from the internet
 if (Get-Command Unblock-File -ErrorAction SilentlyContinue) {
@@ -108,7 +108,7 @@ $domainDN = "DC=$(($DomainFQDN -split '\.' ) -join ',DC=')"
 $created = @{ Users = 0; Computers = 0; Groups = 0; Contacts = 0; ServiceAccounts = 0; Admins = 0; OUs = 0 }
 $errors  = @()
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# -- Helpers -------------------------------------------------------------------
 
 function Write-Step  { param([string]$Msg) Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok    { param([string]$Msg) Write-Host "[+] $Msg" -ForegroundColor Green }
@@ -126,7 +126,7 @@ function Invoke-Safe {
     }
 }
 
-# ── Company Data ──────────────────────────────────────────────────────────────
+# -- Company Data --------------------------------------------------------------
 
 # 5 offices / sites
 $offices = @(
@@ -159,7 +159,7 @@ $jobTitles = @{
     'R&D'         = @('Research Scientist','R&D Engineer','Product Manager','Innovation Lead','Data Scientist','Lab Technician')
 }
 
-# Name pools (64 first names × 56 last names = 3,584 unique combos)
+# Name pools (64 first names x 56 last names = 3,584 unique combos)
 $firstNames = @(
     'James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda',
     'David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica',
@@ -205,7 +205,7 @@ $adminTiers = @(
     @{ Name = 'adm-t2-desktop';    Desc = 'Tier-2 Desktop Support';   Groups = @('Account Operators') }
 )
 
-# ── Clean ─────────────────────────────────────────────────────────────────────
+# -- Clean ---------------------------------------------------------------------
 
 if ($CleanFirst) {
     Write-Step "Cleaning previous test objects under $domainDN ..."
@@ -229,7 +229,7 @@ if ($CleanFirst) {
     }
 }
 
-# ── OU Structure ──────────────────────────────────────────────────────────────
+# -- OU Structure --------------------------------------------------------------
 
 Write-Step "Building OU structure (target: $OUCount OUs)"
 
@@ -256,7 +256,7 @@ foreach ($ouName in $topLevelOUs) {
     } "Create top-level OU $ouName"
 }
 
-# ── Office OUs (under Computers) ──
+# -- Office OUs (under Computers) --
 $computersOU = "OU=Computers,$rootOU"
 $usersOU     = "OU=Users,$rootOU"
 $groupsOU    = "OU=Groups,$rootOU"
@@ -286,9 +286,9 @@ foreach ($office in $offices) {
     }
 }
 
-# ── Department OUs (under Users, per office) ──
-# This creates office → department sub-OUs for users
-# 5 offices × 12 departments = 60 user OUs (plus the top-level and computer OUs)
+# -- Department OUs (under Users, per office) --
+# This creates office -> department sub-OUs for users
+# 5 offices x 12 departments = 60 user OUs (plus the top-level and computer OUs)
 $officeDeptOUs = @{}
 foreach ($office in $offices) {
     $officeUserOU = "OU=$($office.Name),$usersOU"
@@ -311,7 +311,7 @@ foreach ($office in $offices) {
     }
 }
 
-# ── Extra OUs to hit 100 target ──
+# -- Extra OUs to hit 100 target --
 # Computer labs, training rooms, shared devices, conference rooms, break-glass
 $extraOUs = @(
     @{ Name = 'ComputerLabs';   Parent = $computersOU;  Desc = 'Computer lab machines' }
@@ -337,13 +337,13 @@ foreach ($extra in $extraOUs) {
 
 Write-Ok "OU structure complete: $($created.OUs) OUs created"
 
-# ── Groups ────────────────────────────────────────────────────────────────────
+# -- Groups --------------------------------------------------------------------
 
 Write-Step "Creating $GroupCount security groups"
 
 $groupDefs = @()
 
-# 1. Department groups (per office) — GG-{Office}-{Dept}-Users
+# 1. Department groups (per office) - GG-{Office}-{Dept}-Users
 foreach ($office in $offices) {
     foreach ($dept in $departments) {
         $groupDefs += @{
@@ -355,7 +355,7 @@ foreach ($office in $offices) {
     }
 }
 
-# 2. Office-wide groups — GG-{Office}-All-Staff
+# 2. Office-wide groups - GG-{Office}-All-Staff
 foreach ($office in $offices) {
     $groupDefs += @{
         Name = "GG-$($office.Name)-AllStaff"
@@ -365,7 +365,7 @@ foreach ($office in $offices) {
     }
 }
 
-# 3. Department-wide groups (cross-office) — GG-{Dept}-Global
+# 3. Department-wide groups (cross-office) - GG-{Dept}-Global
 foreach ($dept in $departments) {
     $groupDefs += @{
         Name = "GG-$dept-Global"
@@ -418,7 +418,7 @@ foreach ($g in $groupDefs) {
 
 Write-Ok "Groups complete: $($created.Groups) created"
 
-# ── Users ─────────────────────────────────────────────────────────────────────
+# -- Users ---------------------------------------------------------------------
 
 Write-Step "Creating $UserCount users across $($offices.Count) offices and $($departments.Count) departments"
 
@@ -506,7 +506,7 @@ for ($i = 1; $i -le $UserCount; $i++) {
 
 Write-Ok "Users complete: $($created.Users) created"
 
-# ── Computers ─────────────────────────────────────────────────────────────────
+# -- Computers -----------------------------------------------------------------
 
 Write-Step "Creating $ComputerCount computers across $($offices.Count) offices"
 
@@ -539,7 +539,7 @@ for ($i = 1; $i -le $ComputerCount; $i++) {
 
 Write-Ok "Computers complete: $($created.Computers) created"
 
-# ── Contacts ──────────────────────────────────────────────────────────────────
+# -- Contacts ------------------------------------------------------------------
 
 Write-Step "Creating 50 mail contacts"
 
@@ -572,7 +572,7 @@ for ($i = 1; $i -le $contactCount; $i++) {
 
 Write-Ok "Contacts complete: $($created.Contacts) created"
 
-# ── Service Accounts ──────────────────────────────────────────────────────────
+# -- Service Accounts ----------------------------------------------------------
 
 Write-Step "Creating $ServiceAccountCount service accounts"
 
@@ -598,7 +598,7 @@ for ($i = 0; $i -lt $ServiceAccountCount; $i++) {
 
 Write-Ok "Service accounts complete: $($created.ServiceAccounts) created"
 
-# ── Domain Admin Accounts ─────────────────────────────────────────────────────
+# -- Domain Admin Accounts -----------------------------------------------------
 
 Write-Step "Creating $DomainAdminCount tiered admin accounts"
 
@@ -647,13 +647,13 @@ if ($DomainAdminCount -gt $adminTiers.Count) {
 
 Write-Ok "Admin accounts complete: $($created.Admins) created"
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 
 Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor White
-Write-Host "  Test AD Population Complete — $DomainFQDN"                    -ForegroundColor Green
+Write-Host "===============================================================" -ForegroundColor White
+Write-Host "  Test AD Population Complete - $DomainFQDN"                    -ForegroundColor Green
 Write-Host "  Company: $companyName"                                       -ForegroundColor Green
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor White
+Write-Host "===============================================================" -ForegroundColor White
 Write-Host "  OUs created:           $($created.OUs)"                       -ForegroundColor White
 Write-Host "  Users created:         $($created.Users)"                    -ForegroundColor White
 Write-Host "  Computers created:     $($created.Computers)"                -ForegroundColor White
@@ -661,14 +661,14 @@ Write-Host "  Groups created:        $($created.Groups)"                   -Fore
 Write-Host "  Contacts created:      $($created.Contacts)"                 -ForegroundColor White
 Write-Host "  Service accounts:      $($created.ServiceAccounts)"          -ForegroundColor White
 Write-Host "  Admin accounts:        $($created.Admins)"                   -ForegroundColor White
-Write-Host "  ──────────────────────────────────────────────"              -ForegroundColor White
+Write-Host "  ----------------------------------------------"              -ForegroundColor White
 Write-Host "  Total objects:         $((($created.Values | Measure-Object -Sum).Sum))"               -ForegroundColor Yellow
 Write-Host "  Errors:                $($errors.Count)"                     -ForegroundColor White
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor White
+Write-Host "===============================================================" -ForegroundColor White
 Write-Host ""
 Write-Host "  Company Structure:"                                          -ForegroundColor Cyan
-Write-Host "    Offices: $($offices.Count) — $($offices.Name -join ', ')"  -ForegroundColor White
-Write-Host "    Departments: $($departments.Count) — $($departments -join ', ')"  -ForegroundColor White
+Write-Host "    Offices: $($offices.Count) - $($offices.Name -join ', ')"  -ForegroundColor White
+Write-Host "    Departments: $($departments.Count) - $($departments -join ', ')"  -ForegroundColor White
 Write-Host "    Admin tiers: $($adminTiers.Count) (T0 Enterprise, T0 DA, T1 Server, T2 Helpdesk/Desktop)" -ForegroundColor White
 Write-Host ""
 
@@ -679,7 +679,7 @@ if ($errors.Count -gt 0) {
 }
 
 Write-Host "  Next steps:" -ForegroundColor Cyan
-Write-Host "    • Run again with -CleanFirst to wipe and re-seed"
-Write-Host "    • Adjust counts: -UserCount, -ComputerCount, -GroupCount, etc."
-Write-Host "    • Query counts: (Get-ADUser -Filter * -SearchBase '$rootOU').Count"
+Write-Host "    * Run again with -CleanFirst to wipe and re-seed"
+Write-Host "    * Adjust counts: -UserCount, -ComputerCount, -GroupCount, etc."
+Write-Host "    * Query counts: (Get-ADUser -Filter * -SearchBase '$rootOU').Count"
 Write-Host ""
