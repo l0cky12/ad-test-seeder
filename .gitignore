@@ -1,0 +1,17 @@
+## PowerShell
+# Build artifacts
+*.psd1
+*.psm1
+# Allow the main script and README
+!Populate-TestAD.ps1
+!README.md
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Editor
+.vscode/
+.idea/
+*.swp
+*~
