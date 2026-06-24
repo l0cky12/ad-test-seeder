@@ -92,6 +92,25 @@ Each department has realistic job titles (e.g., IT → Helpdesk Technician, Syst
 - **Domain Admin** (or account with delegated OU permissions)
 - PowerShell 5.1+ or PowerShell 7+
 
+## Execution Policy
+
+If you get a "not digitally signed" error (common when downloading from GitHub):
+
+```powershell
+# Option 1 — Unblock + run with bypass (one-time)
+Unblock-File .\Populate-TestAD.ps1
+powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1
+
+# Option 2 — Set policy for current session only
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+.\Populate-TestAD.ps1
+
+# Option 3 — Run directly with bypass + parameters
+powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1 -CleanFirst -UserCount 500
+```
+
+The script also auto-unblocks itself on first run. After that, subsequent runs won't need the bypass flag.
+
 ## Quick Start
 
 ```powershell

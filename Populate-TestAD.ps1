@@ -59,6 +59,20 @@
     Requires: ActiveDirectory PowerShell module
     Run on: Domain-joined machine with RSAT or a Domain Controller
     Permissions: Domain Admin (or delegated OU permissions)
+
+    Execution Policy:
+    If you get a digitally-signed error, run one of these before the script:
+
+    Option 1 — Unblock + run with bypass (one-time):
+        Unblock-File .\Populate-TestAD.ps1
+        powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1
+
+    Option 2 — Set policy for current session only:
+        Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+        .\Populate-TestAD.ps1
+
+    Option 3 — Run directly with bypass:
+        powershell -ExecutionPolicy Bypass -File .\Populate-TestAD.ps1 [-CleanFirst] [-UserCount 500] ...
 #>
 
 [CmdletBinding()]
@@ -76,6 +90,14 @@ param(
 )
 
 # ── Bootstrap ────────────────────────────────────────────────────────────────
+
+# Auto-unblock if downloaded from the internet
+if (Get-Command Unblock-File -ErrorAction SilentlyContinue) {
+    $scriptPath = $MyInvocation.MyCommand.Path
+    if ($scriptPath -and (Test-Path $scriptPath)) {
+        try { Unblock-File -Path $scriptPath -ErrorAction SilentlyContinue } catch {}
+    }
+}
 
 Import-Module ActiveDirectory -ErrorAction Stop
 
