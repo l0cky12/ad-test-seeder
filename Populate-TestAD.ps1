@@ -112,7 +112,7 @@ $offices = @(
     @{ Name = 'BRANCH-LAX';    City = 'Los Angeles';    State = 'CA'; Country = 'US'; Street = '3500 W Olive Ave';   Zip = '90015' }
     @{ Name = 'BRANCH-CHI';    City = 'Chicago';        State = 'IL'; Country = 'US'; Street = '233 S Wacker Dr';    Zip = '60606' }
     @{ Name = 'BRANCH-HOU';    City = 'Houston';        State = 'TX'; Country = 'US'; Street = '1000 McKinney St';   Zip = '77002' }
-    @{ Name = 'REMOTE-EU';     City = 'London';         State = '';   Country = 'UK'; Street = '1 Canada Square';    Zip = 'E14 5AB' }
+    @{ Name = 'REMOTE-EU';     City = 'London';         State = '';   Country = 'GB'; Street = '1 Canada Square';    Zip = 'E14 5AB' }
 )
 
 # 12 departments
@@ -123,18 +123,18 @@ $departments = @(
 
 # Job titles per department
 $jobTitles = @{
-    IT          = @('Helpdesk Technician','Systems Administrator','Network Engineer','Security Analyst','IT Manager','Database Administrator','DevOps Engineer','IT Director')
-    Finance     = @('Accountant','Financial Analyst','Payroll Specialist','Finance Manager','Controller','CFO','Bookkeeper','Auditor')
-    HR          = @('HR Coordinator','Recruiter','HR Generalist','HR Manager','HR Director','Benefits Specialist','Training Specialist')
-    Sales       = @('Sales Representative','Account Executive','Sales Manager','Regional Sales Director','VP of Sales','Sales Engineer','Business Development Rep')
-    Marketing   = @('Marketing Specialist','Content Writer','SEO Analyst','Marketing Manager','Brand Manager','CMO','Social Media Manager','Graphic Designer')
-    Operations  = @('Operations Analyst','Logistics Coordinator','Operations Manager','COO','Supply Chain Specialist','Procurement Analyst')
-    Legal       = @('Paralegal','Legal Counsel','Compliance Officer','General Counsel','Legal Secretary','Contract Specialist')
-    Engineering = @('Software Engineer','Senior Software Engineer','Engineering Manager','CTO','QA Engineer','DevOps Engineer','Solutions Architect','Full Stack Developer')
-    Support     = @('Support Technician','Customer Success Manager','Support Team Lead','Knowledge Base Specialist','Tier 1 Support','Tier 2 Support')
-    Facilities  = @('Facilities Coordinator','Maintenance Technician','Facilities Manager','Office Manager','Receptionist')
-    Security    = @('Security Engineer','SOC Analyst','CISO','Security Manager','Penetration Tester','GRC Analyst')
-    R&D         = @('Research Scientist','R&D Engineer','Product Manager','Innovation Lead','Data Scientist','Lab Technician')
+    'IT'          = @('Helpdesk Technician','Systems Administrator','Network Engineer','Security Analyst','IT Manager','Database Administrator','DevOps Engineer','IT Director')
+    'Finance'     = @('Accountant','Financial Analyst','Payroll Specialist','Finance Manager','Controller','CFO','Bookkeeper','Auditor')
+    'HR'          = @('HR Coordinator','Recruiter','HR Generalist','HR Manager','HR Director','Benefits Specialist','Training Specialist')
+    'Sales'       = @('Sales Representative','Account Executive','Sales Manager','Regional Sales Director','VP of Sales','Sales Engineer','Business Development Rep')
+    'Marketing'   = @('Marketing Specialist','Content Writer','SEO Analyst','Marketing Manager','Brand Manager','CMO','Social Media Manager','Graphic Designer')
+    'Operations'  = @('Operations Analyst','Logistics Coordinator','Operations Manager','COO','Supply Chain Specialist','Procurement Analyst')
+    'Legal'       = @('Paralegal','Legal Counsel','Compliance Officer','General Counsel','Legal Secretary','Contract Specialist')
+    'Engineering' = @('Software Engineer','Senior Software Engineer','Engineering Manager','CTO','QA Engineer','DevOps Engineer','Solutions Architect','Full Stack Developer')
+    'Support'     = @('Support Technician','Customer Success Manager','Support Team Lead','Knowledge Base Specialist','Tier 1 Support','Tier 2 Support')
+    'Facilities'  = @('Facilities Coordinator','Maintenance Technician','Facilities Manager','Office Manager','Receptionist')
+    'Security'    = @('Security Engineer','SOC Analyst','CISO','Security Manager','Penetration Tester','GRC Analyst')
+    'R&D'         = @('Research Scientist','R&D Engineer','Product Manager','Innovation Lead','Data Scientist','Lab Technician')
 }
 
 # Name pools (64 first names × 56 last names = 3,584 unique combos)
@@ -504,7 +504,7 @@ for ($i = 1; $i -le $ComputerCount; $i++) {
             New-ADComputer -Name $compName -SAMAccountName $compName `
                 -Path $targetOU -OperatingSystem $os -Enabled $true `
                 -AccountPassword $securePassword `
-                -Description "$compType - $office.Name - $os" `
+                -Description "$compType - $($office.Name) - $os" `
                 -ErrorAction Stop
         }
         $script:created.Computers++
@@ -612,7 +612,7 @@ if ($DomainAdminCount -gt $adminTiers.Count) {
         Invoke-Safe {
             $existing = Get-ADUser -Filter "SamAccountName -eq '$sam'" -ErrorAction SilentlyContinue
             if (-not $existing) {
-                New-ADADUser -Name $sam -SamAccountName $sam -Path $adminOU `
+                New-ADUser -Name $sam -SamAccountName $sam -Path $adminOU `
                     -DisplayName "Custom Admin $i" -Description "Custom admin account" `
                     -AccountPassword $securePassword -Enabled $true -PasswordNeverExpires $true `
                     -ErrorAction Stop
