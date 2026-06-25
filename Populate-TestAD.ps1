@@ -210,6 +210,7 @@ $adminTiers = @(
 if ($CleanFirst) {
     Write-Step "Cleaning previous test objects under $domainDN ..."
     $testOUs = Get-ADOrganizationalUnit -Filter "Name -like 'Test*' -or Name -like 'Contoso*'" -SearchBase $domainDN -ErrorAction SilentlyContinue
+    $cleanFailed = $false
     foreach ($ou in $testOUs) {
         Invoke-Safe {
             if ($ou.DistinguishedName -ne $domainDN) {
@@ -226,6 +227,15 @@ if ($CleanFirst) {
                 Write-Ok "Removed OU: $($ou.Name)"
             }
         } "Clean OU $($ou.Name)"
+        if ($errors.Count -gt 0 -and $errors[-1] -match 'Access is denied') {
+            $cleanFailed = $true
+        }
+    }
+    if ($cleanFailed) {
+        Write-Warn2 "Clean failed (access denied). Old objects remain in AD."
+        Write-Warn2 "Re-run this script as a Domain Admin with -CleanFirst, or"
+        Write-Warn2 "manually delete the Contoso OU in ADUC / Active Directory Administrative Center."
+        Write-Warn2 "Continuing anyway - existing users with same names will be skipped."
     }
 }
 
@@ -451,22 +461,34 @@ for ($i = 1; $i -le $UserCount; $i++) {
     $last  = $lastNames  | Get-Random
     $sam   = ($first[0] + $last).ToLower()
     $suffix = 1
-    while ($usedNames.ContainsKey($sam)) {
+    while ($usedNames.ContainsKey($sam) -or
+           (Get-ADUser -Filter "SamAccountName -eq '$sam'" -ErrorAction SilentlyContinue)) {
         $sam = "$($first.Substring(0,1).ToLower())$($last.ToLower())$suffix"
         $suffix++
     }
     $usedNames[$sam] = $true
 
     $fullName = "$first $last"
-    $upn      = "$sam@$DomainFQDN"
-    $email    = "$sam@$DomainFQDN"
-    $deptOU   = $officeDeptOUs["$($selectedOffice.Name)|$dept"]
 
-    # Fallback if OU wasn't created (shouldn't happen, but safety)
+    # Ensure CN (Name) is unique within the target OU - AD requires unique
+    # Name per container, not just unique samAccountName across the domain.
+    # If two people named "Lisa Gonzalez" land in the same OU, the second
+    # would fail. Append a numeric suffix to the display name if needed.
+    $deptOU   = $officeDeptOUs["$($selectedOffice.Name)|$dept"]
     if (-not $deptOU) { $deptOU = $usersOU }
 
+    $cnName = $fullName
+    $cnSuffix = 2
+    while (Get-ADUser -Filter "Name -eq '$cnName'" -SearchBase $deptOU -ErrorAction SilentlyContinue) {
+        $cnName = "$fullName $cnSuffix"
+        $cnSuffix++
+    }
+
+    $upn      = "$sam@$DomainFQDN"
+    $email    = "$sam@$DomainFQDN"
+
     Invoke-Safe {
-        New-ADUser -Name $fullName `
+        New-ADUser -Name $cnName `
             -GivenName $first -Surname $last `
             -SamAccountName $sam -UserPrincipalName $upn `
             -DisplayName $fullName -Title $title -Department $dept `
